@@ -4,6 +4,7 @@ namespace Hejunjie\EncryptedRequest;
 
 use Hejunjie\EncryptedRequest\Contracts\DecryptorInterface;
 use Hejunjie\EncryptedRequest\Config\EnvConfigLoader;
+use Hejunjie\EncryptedRequest\Drivers\AesDecryptor;
 use Hejunjie\EncryptedRequest\Exceptions\DecryptionException;
 use Hejunjie\EncryptedRequest\Exceptions\SignatureException;
 use Hejunjie\EncryptedRequest\Exceptions\TimestampException;
@@ -19,7 +20,7 @@ class EncryptedRequestHandler
      * @param DecryptorInterface $decryptor 解密器
      * @param array|string|null $config 配置数组或.env路径
      */
-    public function __construct(DecryptorInterface $decryptor, array|string $config = '')
+    public function __construct(string|DecryptorInterface $decryptorDriver = 'aes', array|string $config = '')
     {
         if (is_array($config)) {
             $loader = new EnvConfigLoader($config);
@@ -30,12 +31,22 @@ class EncryptedRequestHandler
         }
         $this->config = [
             'key' => $loader->get('APP_KEY'),
-            'aes_key' => $loader->get('AES_KEY'),
-            'aes_iv' => $loader->get('AES_IV'),
             'default_timestamp_diff' => $loader->get('DEFAULT_TIMESTAMP_DIFF', 60)
         ];
-
-        $this->decryptor = $decryptor;
+        // 判断是字符串还是实例
+        if ($decryptorDriver instanceof DecryptorInterface) {
+            $this->decryptor = $decryptorDriver;
+        } elseif (is_string($decryptorDriver)) {
+            switch (strtolower($decryptorDriver)) {
+                case 'aes':
+                    $this->decryptor = new AesDecryptor($loader->get('AES_KEY'), $loader->get('AES_IV'));
+                    break;
+                default:
+                    throw new DecryptionException("Unsupported decryptor driver: {$decryptorDriver}");
+            }
+        } else {
+            throw new DecryptionException("Invalid decryptor provided");
+        }
     }
 
     /**
