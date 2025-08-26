@@ -1,0 +1,20 @@
+{
+    "name": "hejunjie/encrypted-request",
+    "description": "PHP 请求加密处理工具包，支持读取 .env 配置，验证签名、时间戳，并自动解密前端加密数据，允许自定义解密器与误差时间，方便快速集成安全加密通信",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Hejunjie\\EncryptedRequest\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "何俊杰",
+            "email": "junjie.he.925@gmail.com"
+        }
+    ],
+    "require": {
+        "vlucas/phpdotenv": "^5.6"
+    }
+}
