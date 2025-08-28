@@ -9,8 +9,8 @@ interface DecryptorInterface
      *
      * @param string $data 加密字符串
      * 
-     * @return array 解密后的数组
+     * @return array|string 解密后的数组或字符串
      * @throws \Hejunjie\EncryptedRequest\Exceptions\DecryptionException
      */
-    public function decrypt(string $data): array;
+    public function decrypt(string $data): array|string;
 }
