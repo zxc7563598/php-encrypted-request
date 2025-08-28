@@ -15,11 +15,12 @@ PHP 请求加密处理工具包，用于快速实现安全的前后端通信。
 
 ## 功能特性
 
-- 🔐 AES-128-CBC 解密前端加密数据，防止数据泄露
+- ♾️ 混合加密，AES 密钥随机生成，前端不需要存储固定密钥，提高安全性
+- 🔐 AES-128-CBC 解密前端加密数据，防止数据泄露，后端只需配置 RSA 私钥即可
 - ✍️ 动态 MD5 签名校验，防止伪造签名
 - ⏰ 秒级时间戳验证，可自定义误差范围，防止劫持请求
 - ⚙️ 支持通过 `.env` 或数组传入配置
-- 🧩 可扩展自定义解密器
+- 🧠 对代码改动极小，配套 npm 无需关注原理即可安全传输数据
 
 ## 安装
 
@@ -32,22 +33,16 @@ composer require hejunjie/encrypted-request
 可以通过 `.env` 文件配置：
 
 ```dotenv
-APP_KEY=your-app-key
+RSA_PRIVATE_KEY=your-private-key
 DEFAULT_TIMESTAMP_DIFF=60
-
-# 自定义解密器时可不传
-AES_KEY=your-aes-key
-AES_IV=your-aes-iv
 ```
 
 也可以通过数组直接传入：
 
 ```php
 $config = [
-    'APP_KEY' => 'your-app-key', // 必传，签名密钥，用于接口签名校验（32位字母或数字）
-    'DEFAULT_TIMESTAMP_DIFF' => 60, // 必传，用于验证请求是否过期，秒级
-    'AES_KEY' => 'your-aes-key', // 非必传，AES 加密的密钥（16位），自定义解密器时可不传
-    'AES_IV' => 'your-aes-iv' // 非必传，AES 加密的初始化向量（16位），自定义解密器时可不传
+    'RSA_PRIVATE_KEY' => 'your-private-key', // 私钥字符串（包含 -----BEGIN PRIVATE KEY-----）
+    'DEFAULT_TIMESTAMP_DIFF' => 60, // 非必传，用于验证请求是否过期，秒级，默认60
 ];
 ```
 
@@ -60,10 +55,13 @@ use Hejunjie\EncryptedRequest\EncryptedRequestHandler;
 
 $param = $_POST; // 自行获取前端请求的参数
 
-$handler = new EncryptedRequestHandler();
+$config = ['RSA_PRIVATE_KEY' => 'your-private-key']; // 如果通过.env配置则无需在此处传递
+
+$handler = new EncryptedRequestHandler($config);
 try {
     $data = $handler->handle(
         $param['en_data'] ?? '',
+        $param['enc_payload'] ?? '',
         $param['timestamp'] ?? '',
         $param['sign'] ?? ''
     );
@@ -77,35 +75,6 @@ try {
 }
 ```
 
-### 自定义解密器
-
-> 实际上，对于绝大多数场景，如果你的 AES_KEY、AES_IV 和 APP_KEY 保密，默认的 AES-128-CBC 解密已经足够满足接口数据加密的需求。
-
-> 自定义解密器主要适用于特殊场景，比如需要使用完全不同的加密算法或对加密规则有更高安全要求。
-
-> 如果你的项目对保密性有极高要求，建议自行设计和实现接口数据的加密规则，而不是使用公开方案。
-
-```php
-class MyCustomDecryptor implements \Hejunjie\EncryptedRequest\Contracts\DecryptorInterface
-{
-    /**
-     * 解密方法
-     *
-     * @param string $data 加密数据
-     *
-     * @return array 解密后的数组
-     * @throws \Hejunjie\EncryptedRequest\Exceptions\DecryptionException
-     */
-    public function decrypt(string $data): array
-    {
-        // 自定义解密逻辑
-    }
-}
-
-$customDecryptor = new MyCustomDecryptor();
-$handler = new EncryptedRequestHandler($customDecryptor);
-```
-
 ## 前端配合
 
 前端使用 [hejunjie-encrypted-request](https://github.com/zxc7563598/npm-encrypted-request) npm 包生成加密数据，并发送给 PHP 后端：
@@ -116,22 +85,12 @@ import { encryptRequest } from "hejunjie-encrypted-request";
 const encrypted = encryptRequest(
   { message: "Hello" },
   {
-    appKey: "your-app-key",
-    aesKey: "your-aes-key",
-    aesIv: "your-aes-iv",
-    token: "your-token",
+    rsaPubKey: "your-public-key",
   }
 );
 ```
 
 PHP 后端直接使用 `EncryptedRequestHandler` 解密即可。
-
-## 注意事项
-
-1. AES 密钥和向量必须为 16 位。
-2. 时间戳单位为秒，`DEFAULT_TIMESTAMP_DIFF` 为允许的最大时间差；需要注意时区问题。
-3. 前端 `appKey` / `aesKey` / `aesIv` 与后端保持一致，否则签名验证失败。
-4. ​`token` 可选，会与密文一起传给 PHP 后端
 
 ## 兼容性
 
