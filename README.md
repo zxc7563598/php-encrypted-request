@@ -61,10 +61,11 @@ use Hejunjie\EncryptedRequest\Contracts\NonceValidatorInterface;
 $params = $_POST; // Obtain front-end request parameters
 
 // EncryptedRequestHandler constructor:
-//   __construct(array|string $config = '', ?NonceValidatorInterface $nonceValidator = null)
+//   __construct(array|string $config = '', int $protocolVersion = 1, ?NonceValidatorInterface $nonceValidator = null)
 //
 // - First argument: config array, .env file path, or omit (auto-detect .env)
-// - Second argument: Nonce validator — defaults to in-memory implementation (testing only!)
+// - Second argument: Protocol version — defaults to 1
+// - Third argument: Nonce validator — defaults to in-memory implementation (testing only!)
 
 $handler = new EncryptedRequestHandler($config);  // Omit first argument if using .env
 
@@ -88,7 +89,7 @@ try {
 ```
 
 > [!WARNING]
-> Without the second argument, the default `InMemoryNonceValidator` stores nonces in process memory, which is **lost after each PHP request** — it cannot truly prevent replay attacks. **Always pass a custom Nonce validator in production.** See the "Custom Nonce Validator" section below.
+> Without the third argument, the default `InMemoryNonceValidator` stores nonces in process memory, which is **lost after each PHP request** — it cannot truly prevent replay attacks. **Always pass a custom Nonce validator in production.** See the "Custom Nonce Validator" section below.
 
 ## Configuration Reference
 
@@ -124,14 +125,14 @@ const options: EncryptOptions = {
     signSecret: signSecret,
 };
 
-const payload = await encryptRequest(options);
+const payload = await encryptRequest(options, version);
 ```
 
 The PHP back-end can then decrypt directly using `EncryptedRequestHandler`.
 
 ## Custom Nonce Validator
 
-The default `InMemoryNonceValidator` stores nonces in process memory and is **only suitable for single-process or testing environments**. For production, implement the `NonceValidatorInterface` (e.g., with Redis, APCu, or a database) and pass it as the **second argument** to the `EncryptedRequestHandler` constructor:
+The default `InMemoryNonceValidator` stores nonces in process memory and is **only suitable for single-process or testing environments**. For production, implement the `NonceValidatorInterface` (e.g., with Redis, APCu, or a database) and pass it as the **third argument** to the `EncryptedRequestHandler` constructor:
 
 ```php
 use Hejunjie\EncryptedRequest\EncryptedRequestHandler;
@@ -154,10 +155,10 @@ class RedisNonceValidator implements NonceValidatorInterface
     }
 }
 
-// 2. Inject as the second argument
+// 2. Inject as the third argument (using named parameter)
 $handler = new EncryptedRequestHandler(
-    $config,                              // First argument: config
-    new RedisNonceValidator($redis)       // Second argument: custom Nonce validator
+    $config,                                    // First argument: config
+    nonceValidator: new RedisNonceValidator($redis)  // Third argument: custom Nonce validator
 );
 ```
 

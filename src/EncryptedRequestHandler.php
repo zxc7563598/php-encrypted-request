@@ -16,19 +16,17 @@ use Hejunjie\EncryptedRequest\Exceptions\TimestampException;
 
 class EncryptedRequestHandler
 {
-    private const PROTOCOL_VERSION = 2;
-
     private array $config;
     private NonceValidatorInterface $nonceValidator;
+    private int $protocolVersion;
 
     /**
-     * @param array|string                $config        配置数组或 .env 路径
-     * @param NonceValidatorInterface|null $nonceValidator Nonce 校验器，默认内存实现（仅适合单进程/测试）
+     * @param array|string                 $config          配置数组或 .env 路径
+     * @param int                          $protocolVersion 协议版本号，默认 1
+     * @param NonceValidatorInterface|null $nonceValidator  Nonce 校验器，默认内存实现（仅适合单进程/测试）
      */
-    public function __construct(
-        array|string $config = '',
-        ?NonceValidatorInterface $nonceValidator = null,
-    ) {
+    public function __construct(array|string $config = '', int $protocolVersion = 1, ?NonceValidatorInterface $nonceValidator = null)
+    {
         if (is_array($config)) {
             $loader = new EnvConfigLoader($config);
         } elseif (is_string($config)) {
@@ -44,6 +42,7 @@ class EncryptedRequestHandler
         ];
 
         $this->nonceValidator = $nonceValidator ?? new InMemoryNonceValidator();
+        $this->protocolVersion = $protocolVersion;
     }
 
     /**
@@ -84,7 +83,7 @@ class EncryptedRequestHandler
         $rsa = new RsaDecryptor($this->config['rsa_private_key']);
         $decryptedPayload = $rsa->decrypt($enc_payload);
         $payload = json_decode($decryptedPayload, true);
-        if (!is_array($payload) || ($payload['v'] ?? null) !== self::PROTOCOL_VERSION) {
+        if (!is_array($payload) || ($payload['v'] ?? null) !== $this->protocolVersion) {
             throw new DecryptionException("Payload 格式无效或协议版本不支持");
         }
         $aesKey = base64_decode((string) ($payload['aes_key'] ?? ''), true);

@@ -61,10 +61,11 @@ use Hejunjie\EncryptedRequest\Contracts\NonceValidatorInterface;
 $params = $_POST; // 自行获取前端请求参数
 
 // EncryptedRequestHandler 构造函数：
-//   __construct(array|string $config = '', ?NonceValidatorInterface $nonceValidator = null)
+//   __construct(array|string $config = '', int $protocolVersion = 1, ?NonceValidatorInterface $nonceValidator = null)
 //
 // - 第一个参数：配置数组、.env 文件路径、或不传（自动检测 .env）
-// - 第二个参数：Nonce 校验器，不传则使用默认内存实现（仅适合测试环境！）
+// - 第二个参数：协议版本号，默认 1
+// - 第三个参数：Nonce 校验器，不传则使用默认内存实现（仅适合测试环境！）
 
 $handler = new EncryptedRequestHandler($config);  // 如果使用 .env 配置，无需传入第一个参数
 
@@ -88,7 +89,7 @@ try {
 ```
 
 > [!WARNING]
-> 不传第二个参数时，Nonce 校验器默认使用 `InMemoryNonceValidator`，它将数据保存在进程内存中，**PHP 请求结束即丢失**，无法真正防止重放攻击。**生产环境务必传入自定义 Nonce 校验器**，参考下方「自定义 Nonce 校验器」章节。
+> 不传第三个参数时，Nonce 校验器默认使用 `InMemoryNonceValidator`，它将数据保存在进程内存中，**PHP 请求结束即丢失**，无法真正防止重放攻击。**生产环境务必传入自定义 Nonce 校验器**，参考下方「自定义 Nonce 校验器」章节。
 
 ## 配置说明
 
@@ -124,14 +125,14 @@ const options: EncryptOptions = {
     signSecret: signSecret,
 };
 
-const payload = await encryptRequest(options);
+const payload = await encryptRequest(options, version);
 ```
 
 PHP 后端直接使用 `EncryptedRequestHandler` 解密即可。
 
 ## 自定义 Nonce 校验器
 
-默认 `InMemoryNonceValidator` 将 Nonce 存储在进程内存中，**仅适合单进程或测试环境**。生产环境需要自行实现 `NonceValidatorInterface` 接口（如 Redis、APCu、数据库），并通过 `EncryptedRequestHandler` 构造函数的**第二个参数**传入：
+默认 `InMemoryNonceValidator` 将 Nonce 存储在进程内存中，**仅适合单进程或测试环境**。生产环境需要自行实现 `NonceValidatorInterface` 接口（如 Redis、APCu、数据库），并通过 `EncryptedRequestHandler` 构造函数的**第三个参数**传入：
 
 ```php
 use Hejunjie\EncryptedRequest\EncryptedRequestHandler;
@@ -154,10 +155,10 @@ class RedisNonceValidator implements NonceValidatorInterface
     }
 }
 
-// 2. 作为第二个参数注入
+// 2. 作为第三个参数注入（使用命名参数）
 $handler = new EncryptedRequestHandler(
-    $config,                              // 第一个参数：配置
-    new RedisNonceValidator($redis)       // 第二个参数：自定义 Nonce 校验器
+    $config,                                    // 第一个参数：配置
+    nonceValidator: new RedisNonceValidator($redis)  // 第三个参数：自定义 Nonce 校验器
 );
 ```
 
