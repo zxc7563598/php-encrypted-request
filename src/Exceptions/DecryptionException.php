@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hejunjie\EncryptedRequest\Exceptions;
 
 use Exception;
@@ -7,7 +9,7 @@ use Exception;
 class DecryptionException extends Exception
 {
     public function __construct(
-        string $message = "Failed to decrypt the data",
+        string $message = "数据解密失败",
         int $code = 0,
         ?Exception $previous = null
     ) {

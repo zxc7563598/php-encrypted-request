@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hejunjie\EncryptedRequest\Config;
 
 use Dotenv\Dotenv;
@@ -38,7 +40,7 @@ class EnvConfigLoader
      * 
      * @return mixed
      */
-    public function get(string $key, $default = null): mixed
+    public function get(string $key, mixed $default = null): mixed
     {
         return $this->config[$key] ?? $default;
     }
@@ -51,7 +53,7 @@ class EnvConfigLoader
      * 
      * @return void
      */
-    public function set(string $key, $value): void
+    public function set(string $key, mixed $value): void
     {
         $this->config[$key] = $value;
     }

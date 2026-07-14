@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hejunjie\EncryptedRequest\Drivers;
 
 use Hejunjie\EncryptedRequest\Contracts\DecryptorInterface;
@@ -16,13 +18,13 @@ class RsaDecryptor implements DecryptorInterface
      */
     public function __construct(string $private_key)
     {
-        $this->privateKey = @openssl_pkey_get_private($private_key);
+        $this->privateKey = openssl_pkey_get_private($private_key);
         if ($this->privateKey === false) {
             $errs = [];
             while ($err = openssl_error_string()) {
                 $errs[] = $err;
             }
-            $msg = 'Failed to load private key';
+            $msg = '私钥加载失败';
             if (!empty($errs)) {
                 $msg .= ': ' . implode(' | ', $errs);
             }
@@ -44,31 +46,31 @@ class RsaDecryptor implements DecryptorInterface
             // Base64 解码
             $ciphertext = base64_decode($data, true);
             if ($ciphertext === false) {
-                throw new DecryptionException('enc_payload is not valid base64');
+                throw new DecryptionException('enc_payload 不是有效的 Base64');
             }
             // 检查 OpenSSL 扩展是否可用
             if (!function_exists('openssl_pkey_get_private')) {
-                throw new DecryptionException('OpenSSL extension is not available in PHP');
+                throw new DecryptionException('PHP OpenSSL 扩展不可用');
             }
             // 尝试解密
             $decrypted = '';
-            $success = @openssl_private_decrypt($ciphertext, $decrypted, $this->privateKey, OPENSSL_PKCS1_OAEP_PADDING);
+            $success = openssl_private_decrypt($ciphertext, $decrypted, $this->privateKey, OPENSSL_PKCS1_OAEP_PADDING);
             if ($success === false) {
                 $errs = [];
                 while ($err = openssl_error_string()) {
                     $errs[] = $err;
                 }
-                $msg = 'RSA decryption failed';
+                $msg = 'RSA 解密失败';
                 if (!empty($errs)) {
                     $msg .= ': ' . implode(' | ', $errs);
                 } else {
-                    $msg .= '. No OpenSSL errors captured.';
+                    $msg .= '，未捕获到 OpenSSL 错误信息';
                 }
                 throw new DecryptionException($msg);
             }
             // 额外校验：解密结果不能为空
             if ($decrypted === '' || $decrypted === null) {
-                throw new DecryptionException('RSA decryption returned empty string');
+                throw new DecryptionException('RSA 解密结果为空');
             }
             return $decrypted;
         } catch (\Throwable $e) {
