@@ -1,9 +1,6 @@
 # hejunjie/encrypted-request
 
-<div align="center">
-  <a href="./README.md">English</a>｜<a href="./README.zh-CN.md">简体中文</a>
-  <hr width="50%"/>
-</div>
+[English](./README.md) ｜ 简体中文
 
 PHP 请求加密工具包，用于快速实现前后端安全通信。
 

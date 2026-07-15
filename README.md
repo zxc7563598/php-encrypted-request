@@ -1,9 +1,6 @@
 # hejunjie/encrypted-request
 
-<div align="center">
-  <a href="./README.md">English</a>｜<a href="./README.zh-CN.md">简体中文</a>
-  <hr width="50%"/>
-</div>
+English ｜ [简体中文](./README.zh-CN.md)
 
 A PHP encryption toolkit for secure front-end to back-end communication.
 
